@@ -33,7 +33,7 @@ get_prefix_from_fib() {
     fi
     ((idx--))
   done
-  echo "${line}"
+
   for (( ; idx >= 0; )); do
     line="${fib[idx]}"
     if [[ ! ${line##*"/0"*} ]]; then
