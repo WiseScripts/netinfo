@@ -110,10 +110,8 @@ test_net_info() {
   ip r add default via "$gw" dev "$dev" src "$ip" > /dev/null 2>&1
   if ping -c 1 -w 10 -q 8.8.8.8 > /dev/null 2>&1; then
     shutdown -c --no-wall  > /dev/null 2>&1
-    echo
     echo "Test OK."
   else
-    echo
     echo "Test failed."
     echo "Reboot ..."
   fi
