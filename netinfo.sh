@@ -93,18 +93,23 @@ get_net_info() {
 }
 
 test_net_info() {
+  echo "If the test fails, the machine may need to be restarted!"
+  echo
+  echo "Press Ctrl+C to cancel. Other key to test ..."
+  read -r key
+  trap "" INT
   echo "Start test ..."
   echo
-  shutdown -r +1 &
-  ip a del "$ip" dev "$dev" /dev/null 2>&1
-  ip r flush table main
-  ip r flush cache
-  ip a add "$ip/$prefix" dev "$dev"
-  ip a flush "$ip/$prefix" dev "$dev"
-  ip r add "$net/$prefix" dev "$dev" scope link src "$ip"
-  ip r add default via "$gw" dev "$dev" src "$ip"
+  shutdown --no-wall -r +1 > /dev/null 2>&1 &
+  ip a del "$ip" dev "$dev" > /dev/null 2>&1
+  ip r flush table main > /dev/null 2>&1
+  ip r flush cache > /dev/null 2>&1
+  ip a add "$ip/$prefix" dev "$dev" > /dev/null 2>&1
+  ip a flush "$ip/$prefix" dev "$dev" > /dev/null 2>&1
+  ip r add "$net/$prefix" dev "$dev" scope link src "$ip" > /dev/null 2>&1
+  ip r add default via "$gw" dev "$dev" src "$ip" > /dev/null 2>&1
   if ping -c 1 -w 10 -q 8.8.8.8 > /dev/null 2>&1; then
-    shutdown -c
+    shutdown -c --no-wall  > /dev/null 2>&1
     echo
     echo "Test OK."
   else
@@ -123,12 +128,6 @@ main() {
   get_net_info
 
   if [ $# -gt 0 ]; then
-    echo
-    echo "If the test fails, the machine may need to be restarted!"
-    echo
-    echo "Press Ctrl+C to cancel. Other key to test ..."
-    read -r key
-    trap "" INT
     test_net_info
   fi
 }
