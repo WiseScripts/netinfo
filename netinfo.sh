@@ -6,6 +6,7 @@ ip=
 gw=
 net=
 prefix=
+__prefix=
 
 ip_to_int() {
   IFS=. read -r i j k l <<< "$1"
@@ -61,6 +62,8 @@ get_net_info() {
   read -r mac <<< "$(grep -Po '..:..:..:..:..:..' <<< "${link[@]}")"
   read -ra address <<< "$(ip -o -4 a | grep "${ip}")"
   IFS="/" read -r dummy prefix <<< "${address[3]}"
+  __prefix=$prefix
+   [ -z "$prefix" ] && __prefix=32 
   if [ "$prefix" = 32 ] || [ -z "$prefix" ]; then
     get_prefix_from_fib
   fi
@@ -93,14 +96,12 @@ get_net_info() {
 }
 
 test_net_info() {
-  echo "If the test fails, the machine may need to be restarted!"
-  echo
   echo "Press Ctrl+C to cancel. Other key to test ..."
   read -r key
   trap "" INT
   echo "Start test ..."
   echo
-  shutdown --no-wall -r +1 > /dev/null 2>&1 &
+  IFS=$'\n' mapfile -t orig_route < <(ip r)
   ip a del "$ip" dev "$dev" > /dev/null 2>&1
   ip r flush table main > /dev/null 2>&1
   ip r flush cache > /dev/null 2>&1
@@ -109,11 +110,18 @@ test_net_info() {
   ip r add "$net/$prefix" dev "$dev" scope link src "$ip" > /dev/null 2>&1
   ip r add default via "$gw" dev "$dev" src "$ip" > /dev/null 2>&1
   if ping -c 1 -w 10 -q 8.8.8.8 > /dev/null 2>&1; then
-    shutdown -c --no-wall  > /dev/null 2>&1
     echo "Test OK."
   else
-    echo "Test failed."
-    echo "Reboot ..."
+    echo "Test failed. Restore ip and route ..."
+    ip a del "$ip" dev "$dev" > /dev/null 2>&1
+    ip r flush table main > /dev/null 2>&1
+    ip r flush cache > /dev/null 2>&1
+    ip a add "${ip}/${__prefix}" dev "$dev" > /dev/null 2>&1
+    for ((((idx = ${#orig_route[@]} - 1)); idx >= 0; )); do
+      line="${orig_route[idx]}"
+      ip r add "${line}"
+      ((idx--))
+    done
   fi
 }
 
