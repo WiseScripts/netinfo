@@ -57,13 +57,15 @@ get_net_info() {
     gw="openvz"
     dev="${route[2]}"
     ip="${route[4]}"
+    echo "Can not get gateway."  
+    exit 1  
   fi
   read -ra link <<< "$(ip -o l | grep "${dev}")"
   read -r mac <<< "$(grep -Po '..:..:..:..:..:..' <<< "${link[@]}")"
   read -ra address <<< "$(ip -o -4 a | grep "${ip}")"
   IFS="/" read -r dummy prefix <<< "${address[3]}"
   __prefix=$prefix
-   [ -z "$prefix" ] && __prefix=32 
+   [ -z "$prefix" ] && __prefix=32
   if [ "$prefix" = 32 ] || [ -z "$prefix" ]; then
     get_prefix_from_fib
   fi
